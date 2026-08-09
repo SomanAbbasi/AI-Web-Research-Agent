@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     llm_model: str = "gpt-4o-mini"
     llm_max_context: int = 12_000
 
+    database_url: str = "sqlite+aiosqlite:///./research.db"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=False,

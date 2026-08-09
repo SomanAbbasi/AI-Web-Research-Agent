@@ -6,7 +6,7 @@ This project is being developed phase by phase.
 
 ## Current Phase
 
-Phase 4 — AI Understanding & Extraction
+Phase 5 — Data Management & Reporting
 
 ## Features
 
@@ -29,6 +29,11 @@ Phase 4 — AI Understanding & Extraction
 - LLM-backed structured extraction
 - Extraction validation, missing-field tracking and confidence scoring
 - Pluggable LLM providers (OpenAI, mock)
+- Async SQLAlchemy persistence (PostgreSQL/asyncpg, SQLite/aiosqlite)
+- Research sessions with pages, sources and extracted records
+- Deduplicated storage of pages, sources and records per session
+- Record search, confidence filtering, missing-field filtering and pagination
+- Report export (JSON, CSV, Markdown)
 
 ## Project Layout
 
@@ -86,3 +91,4 @@ uv run mypy src
 - [Crawling Engine](docs/crawling.md)
 - [Browser Automation](docs/browser-automation.md)
 - [AI Extraction](docs/extraction.md)
+- [Data Management & Reporting](docs/data-management.md)
