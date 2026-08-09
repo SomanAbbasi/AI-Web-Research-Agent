@@ -54,6 +54,7 @@ async def crawl(
                     )
                     for link in result.page.links
                 ],
+                via_browser=result.page.via_browser,
             )
 
         response_pages.append(

@@ -29,6 +29,7 @@ class PageContent:
     title: str | None
     text: str
     links: list[PageLink] = field(default_factory=list)
+    via_browser: bool = False
 
 
 @dataclass

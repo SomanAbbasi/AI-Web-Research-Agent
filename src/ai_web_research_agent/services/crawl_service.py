@@ -3,11 +3,15 @@ from ai_web_research_agent.domain.crawling import (
     CrawlRequest,
     CrawlResult,
 )
+from ai_web_research_agent.infrastructure.browser import (
+    BrowserPageFetcher,
+)
 from ai_web_research_agent.infrastructure.html_parser import (
     HTMLParser,
 )
 from ai_web_research_agent.infrastructure.http import (
     HTTPClient,
+    HttpPageFetcher,
     RetryPolicy,
 )
 from ai_web_research_agent.infrastructure.robots import (
@@ -15,6 +19,9 @@ from ai_web_research_agent.infrastructure.robots import (
 )
 from ai_web_research_agent.services.crawler import (
     Crawler,
+)
+from ai_web_research_agent.services.fetching import (
+    HybridPageFetcher,
 )
 from ai_web_research_agent.services.rate_limiter import (
     RateLimiter,
@@ -41,10 +48,27 @@ async def crawl_website(
             user_agent=settings.user_agent,
         )
 
+        http_fetcher = HttpPageFetcher(http_client)
+
+        browser_fetcher = None
+
+        if settings.use_browser:
+            browser_fetcher = BrowserPageFetcher(
+                timeout=settings.browser_timeout,
+                render_delay=settings.browser_render_delay,
+                user_agent=settings.user_agent,
+            )
+
+        page_fetcher = HybridPageFetcher(
+            http_fetcher=http_fetcher,
+            browser_fetcher=browser_fetcher,
+            min_text_length=settings.min_visible_text,
+        )
+
         parser = HTMLParser()
 
         crawler = Crawler(
-            http_client=http_client,
+            page_fetcher=page_fetcher,
             robots_policy=robots_policy,
             html_parser=parser,
             rate_limiter=RateLimiter(

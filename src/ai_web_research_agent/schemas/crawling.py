@@ -27,6 +27,7 @@ class PageSchema(BaseModel):
     title: str | None
     text: str
     links: list[PageLinkSchema]
+    via_browser: bool = False
 
 
 class CrawlResultSchema(BaseModel):

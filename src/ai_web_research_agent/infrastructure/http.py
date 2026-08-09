@@ -5,6 +5,8 @@ from typing import Self
 
 import httpx
 
+from ai_web_research_agent.domain.fetching import FetchedPage
+
 
 class RetryPolicy:
     """How many attempts a request may make and the delay between them.
@@ -91,3 +93,20 @@ class HTTPClient:
 
     async def _backoff(self, attempt: int) -> None:
         await self._sleeper(self._retry_policy.delay_for(attempt))
+
+
+class HttpPageFetcher:
+    """Fetches pages over plain HTTP."""
+
+    def __init__(self, http_client: HTTPClient) -> None:
+        self._http_client = http_client
+
+    async def fetch(self, url: str) -> FetchedPage:
+        response = await self._http_client.get(url)
+
+        return FetchedPage(
+            url=str(response.url),
+            status_code=response.status_code,
+            html=response.text,
+            content_type=response.headers.get("content-type", "text/html"),
+        )

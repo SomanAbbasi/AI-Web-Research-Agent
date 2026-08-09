@@ -5,16 +5,19 @@ from ai_web_research_agent.domain.crawling import (
     CrawlRequest,
     CrawlStatus,
 )
+from ai_web_research_agent.domain.fetching import FetchedPage
 from ai_web_research_agent.infrastructure.html_parser import (
     HTMLParser,
 )
 from ai_web_research_agent.infrastructure.http import (
     HTTPClient,
+    HttpPageFetcher,
 )
 from ai_web_research_agent.infrastructure.robots import (
     RobotsPolicy,
 )
 from ai_web_research_agent.services.crawler import Crawler
+from ai_web_research_agent.services.fetching import HybridPageFetcher
 
 
 @pytest.mark.asyncio
@@ -68,7 +71,7 @@ async def test_crawler_discovers_pages(httpx_mock):
         )
 
         crawler = Crawler(
-            http_client=client,
+            page_fetcher=HttpPageFetcher(client),
             robots_policy=robots,
             html_parser=HTMLParser(),
         )
@@ -122,7 +125,7 @@ async def test_crawler_respects_max_pages(
         )
 
         crawler = Crawler(
-            http_client=client,
+            page_fetcher=HttpPageFetcher(client),
             robots_policy=robots,
             html_parser=HTMLParser(),
         )
@@ -167,7 +170,7 @@ async def test_crawler_marks_http_error_as_failed(httpx_mock):
         )
 
         crawler = Crawler(
-            http_client=client,
+            page_fetcher=HttpPageFetcher(client),
             robots_policy=robots,
             html_parser=HTMLParser(),
         )
@@ -200,7 +203,7 @@ async def test_crawler_marks_network_error_as_failed(httpx_mock):
         )
 
         crawler = Crawler(
-            http_client=client,
+            page_fetcher=HttpPageFetcher(client),
             robots_policy=robots,
             html_parser=HTMLParser(),
         )
@@ -227,7 +230,7 @@ async def test_crawler_skips_robots_disallowed(httpx_mock):
         )
 
         crawler = Crawler(
-            http_client=client,
+            page_fetcher=HttpPageFetcher(client),
             robots_policy=robots,
             html_parser=HTMLParser(),
         )
@@ -248,7 +251,7 @@ async def test_crawler_skips_outside_allowed_domain(httpx_mock):
         )
 
         crawler = Crawler(
-            http_client=client,
+            page_fetcher=HttpPageFetcher(client),
             robots_policy=robots,
             html_parser=HTMLParser(),
         )
@@ -283,7 +286,7 @@ async def test_crawler_skips_non_html_content(httpx_mock):
         )
 
         crawler = Crawler(
-            http_client=client,
+            page_fetcher=HttpPageFetcher(client),
             robots_policy=robots,
             html_parser=HTMLParser(),
         )
@@ -324,7 +327,7 @@ async def test_crawler_respects_depth_limit(httpx_mock):
         )
 
         crawler = Crawler(
-            http_client=client,
+            page_fetcher=HttpPageFetcher(client),
             robots_policy=robots,
             html_parser=HTMLParser(),
         )
@@ -367,7 +370,7 @@ async def test_crawler_deduplicates_links(httpx_mock):
         )
 
         crawler = Crawler(
-            http_client=client,
+            page_fetcher=HttpPageFetcher(client),
             robots_policy=robots,
             html_parser=HTMLParser(),
         )
@@ -407,7 +410,7 @@ async def test_crawler_does_not_follow_external_links(httpx_mock):
         )
 
         crawler = Crawler(
-            http_client=client,
+            page_fetcher=HttpPageFetcher(client),
             robots_policy=robots,
             html_parser=HTMLParser(),
         )
@@ -424,3 +427,55 @@ async def test_crawler_does_not_follow_external_links(httpx_mock):
         "https://example.com/",
         "https://example.com/about",
     ]
+
+
+class _BrowserFake:
+    def __init__(self, page: FetchedPage) -> None:
+        self._page = page
+
+    async def fetch(self, url: str) -> FetchedPage:
+        return self._page
+
+
+@pytest.mark.asyncio
+async def test_crawler_uses_browser_rendered_content(httpx_mock):
+    register_home_page(httpx_mock)
+
+    httpx_mock.add_response(
+        url="https://example.com/",
+        status_code=200,
+        headers={"content-type": "text/html"},
+        text='<div id="root"></div>',
+    )
+
+    rendered = FetchedPage(
+        url="https://example.com/",
+        status_code=200,
+        html="<html><body>" + "<p>Dynamic content</p>" * 100 + "</body></html>",
+        via_browser=True,
+    )
+
+    async with HTTPClient() as client:
+        robots = RobotsPolicy(
+            http_client=client,
+            user_agent="AIWebResearchAgent/0.1",
+        )
+
+        page_fetcher = HybridPageFetcher(
+            http_fetcher=HttpPageFetcher(client),
+            browser_fetcher=_BrowserFake(rendered),
+        )
+
+        crawler = Crawler(
+            page_fetcher=page_fetcher,
+            robots_policy=robots,
+            html_parser=HTMLParser(),
+        )
+
+        results = await crawler.crawl(CrawlRequest(start_url="https://example.com"))
+
+    assert len(results) == 1
+    assert results[0].status == CrawlStatus.SUCCESS
+    assert results[0].page is not None
+    assert results[0].page.via_browser is True
+    assert "Dynamic content" in results[0].page.text

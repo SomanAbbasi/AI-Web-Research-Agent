@@ -7,11 +7,11 @@ from ai_web_research_agent.domain.crawling import (
     CrawlResult,
     CrawlStatus,
 )
+from ai_web_research_agent.domain.fetching import (
+    PageFetcher,
+)
 from ai_web_research_agent.infrastructure.html_parser import (
     HTMLParser,
-)
-from ai_web_research_agent.infrastructure.http import (
-    HTTPClient,
 )
 from ai_web_research_agent.infrastructure.robots import (
     RobotsPolicy,
@@ -32,12 +32,12 @@ class Crawler:
 
     def __init__(
         self,
-        http_client: HTTPClient,
+        page_fetcher: PageFetcher,
         robots_policy: RobotsPolicy,
         html_parser: HTMLParser,
         rate_limiter: RateLimiter | None = None,
     ) -> None:
-        self._http_client = http_client
+        self._page_fetcher = page_fetcher
         self._robots_policy = robots_policy
         self._html_parser = html_parser
         self._rate_limiter = rate_limiter or RateLimiter()
@@ -102,23 +102,20 @@ class Crawler:
 
                 await self._rate_limiter.wait(host)
 
-                response = await self._http_client.get(url)
+                fetched = await self._page_fetcher.fetch(url)
 
-                if response.status_code >= 400:
+                if fetched.status_code >= 400:
                     results.append(
                         CrawlResult(
                             url=url,
                             status=CrawlStatus.FAILED,
-                            error=f"HTTP {response.status_code}",
+                            error=f"HTTP {fetched.status_code}",
                         )
                     )
 
                     continue
 
-                content_type = response.headers.get(
-                    "content-type",
-                    "",
-                ).lower()
+                content_type = fetched.content_type.lower()
 
                 if "text/html" not in content_type:
                     results.append(
@@ -132,14 +129,16 @@ class Crawler:
                     continue
 
                 page = self._html_parser.parse(
-                    url=str(response.url),
-                    status_code=response.status_code,
-                    html=response.text,
+                    url=fetched.url,
+                    status_code=fetched.status_code,
+                    html=fetched.html,
                 )
+
+                page.via_browser = fetched.via_browser
 
                 results.append(
                     CrawlResult(
-                        url=str(response.url),
+                        url=fetched.url,
                         status=CrawlStatus.SUCCESS,
                         page=page,
                     )

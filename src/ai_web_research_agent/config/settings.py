@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     crawl_delay: float = 0.5
     max_retries: int = 3
 
+    use_browser: bool = False
+    browser_timeout: float = 30.0
+    browser_render_delay: float = 1.0
+    min_visible_text: int = 200
+
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=False,
