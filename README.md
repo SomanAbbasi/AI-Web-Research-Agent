@@ -6,7 +6,7 @@ This project is being developed phase by phase.
 
 ## Current Phase
 
-Phase 3 — Browser Automation
+Phase 4 — AI Understanding & Extraction
 
 ## Features
 
@@ -26,6 +26,9 @@ Phase 3 — Browser Automation
 - Same-domain crawling with depth and page limits
 - Transport-agnostic page fetching (HTTP default, Playwright fallback)
 - JavaScript rendering for thin HTTP content
+- LLM-backed structured extraction
+- Extraction validation, missing-field tracking and confidence scoring
+- Pluggable LLM providers (OpenAI, mock)
 
 ## Project Layout
 
@@ -82,3 +85,4 @@ uv run mypy src
 
 - [Crawling Engine](docs/crawling.md)
 - [Browser Automation](docs/browser-automation.md)
+- [AI Extraction](docs/extraction.md)

@@ -23,6 +23,11 @@ class Settings(BaseSettings):
     browser_render_delay: float = 1.0
     min_visible_text: int = 200
 
+    llm_provider: str = "mock"
+    llm_api_key: str | None = None
+    llm_model: str = "gpt-4o-mini"
+    llm_max_context: int = 12_000
+
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=False,
