@@ -15,6 +15,7 @@ dependencies = [
     "pydantic>=2.11.0",
     "pydantic-settings>=2.10.0",
     "python-dotenv>=1.1.0",
+    "beautifulsoup4>=4.15.0",
 ]
 
 [dependency-groups]
@@ -25,6 +26,7 @@ dev = [
     "ruff",
     "mypy",
     "pre-commit",
+    "pytest-httpx>=0.36.2",
 ]
 
 [tool.hatch.build.targets.wheel]

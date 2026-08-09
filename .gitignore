@@ -40,3 +40,6 @@ build/
 
 # Misc
 *.sqlite3
+
+tests
+
