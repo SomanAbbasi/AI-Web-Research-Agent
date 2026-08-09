@@ -39,8 +39,6 @@ class HTTPClient:
 
     async def get(self, url: str) -> httpx.Response:
         if self._client is None:
-            raise RuntimeError(
-                "HTTPClient must be used as an async context manager"
-            )
+            raise RuntimeError("HTTPClient must be used as an async context manager")
 
         return await self._client.get(url)

@@ -1,4 +1,3 @@
-
 from fastapi.testclient import TestClient
 
 from ai_web_research_agent.app import app
@@ -26,4 +25,3 @@ def test_version():
     response = client.get("/version")
 
     assert response.status_code == 200
-    

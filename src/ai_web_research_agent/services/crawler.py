@@ -1,5 +1,7 @@
 from urllib.parse import urlparse
 
+import httpx
+
 from ai_web_research_agent.domain.crawling import (
     CrawlRequest,
     CrawlResult,
@@ -41,14 +43,9 @@ class Crawler:
     ) -> list[CrawlResult]:
         frontier = URLFrontier()
 
-        start_url = normalize_url(
-            request.start_url
-        )
+        start_url = normalize_url(request.start_url)
 
-        allowed_domain = (
-            request.allowed_domain
-            or urlparse(start_url).netloc
-        )
+        allowed_domain = request.allowed_domain or urlparse(start_url).netloc
 
         frontier.add(
             start_url,
@@ -57,10 +54,7 @@ class Crawler:
 
         results: list[CrawlResult] = []
 
-        while (
-            len(frontier) > 0
-            and len(results) < request.max_pages
-        ):
+        while len(frontier) > 0 and len(results) < request.max_pages:
             item = frontier.pop()
 
             if item is None:
@@ -85,9 +79,7 @@ class Crawler:
 
                 continue
 
-            allowed = await self._robots_policy.can_fetch(
-                url
-            )
+            allowed = await self._robots_policy.can_fetch(url)
 
             if not allowed:
                 results.append(
@@ -101,18 +93,14 @@ class Crawler:
                 continue
 
             try:
-                response = await self._http_client.get(
-                    url
-                )
+                response = await self._http_client.get(url)
 
                 if response.status_code >= 400:
                     results.append(
                         CrawlResult(
                             url=url,
                             status=CrawlStatus.FAILED,
-                            error=(
-                                f"HTTP {response.status_code}"
-                            ),
+                            error=(f"HTTP {response.status_code}"),
                         )
                     )
 
@@ -153,9 +141,7 @@ class Crawler:
 
                 for link in page.links:
                     try:
-                        normalized = normalize_url(
-                            link.url
-                        )
+                        normalized = normalize_url(link.url)
                     except ValueError:
                         continue
 
@@ -168,7 +154,7 @@ class Crawler:
                             depth + 1,
                         )
 
-            except Exception as exc:
+            except httpx.HTTPError as exc:
                 results.append(
                     CrawlResult(
                         url=url,

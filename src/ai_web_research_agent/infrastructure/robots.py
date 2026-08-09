@@ -1,5 +1,7 @@
 from urllib.parse import urlparse
 
+import httpx
+
 from ai_web_research_agent.infrastructure.http import HTTPClient
 
 
@@ -38,22 +40,18 @@ class RobotsPolicy:
         robots_url = f"{origin}/robots.txt"
 
         try:
-            response = await self._http_client.get(
-                robots_url
-            )
+            response = await self._http_client.get(robots_url)
 
             if response.status_code >= 400:
                 self._rules[origin] = []
                 self._loaded.add(origin)
                 return
 
-            rules = self._parse(
-                response.text
-            )
+            rules = self._parse(response.text)
 
             self._rules[origin] = rules
 
-        except Exception:
+        except httpx.HTTPError:
             # If robots.txt cannot be retrieved,
             # fail open for this initial crawler version.
             self._rules[origin] = []
@@ -84,11 +82,7 @@ class RobotsPolicy:
             if key == "user-agent":
                 applies = value == "*"
 
-            elif (
-                key == "disallow"
-                and applies
-                and value
-            ):
+            elif key == "disallow" and applies and value:
                 rules.append(value)
 
         return rules

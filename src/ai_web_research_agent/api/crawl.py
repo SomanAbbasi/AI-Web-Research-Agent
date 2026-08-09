@@ -14,7 +14,6 @@ from ai_web_research_agent.services.crawl_service import (
     crawl_website,
 )
 
-
 router = APIRouter(
     prefix="/crawl",
     tags=["Crawling"],
@@ -35,9 +34,7 @@ async def crawl(
         allowed_domain=request.allowed_domain,
     )
 
-    results = await crawl_website(
-        crawl_request
-    )
+    results = await crawl_website(crawl_request)
 
     response_pages: list[CrawlResultSchema] = []
 

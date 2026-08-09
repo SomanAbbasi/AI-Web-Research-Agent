@@ -30,9 +30,7 @@ async def test_crawler_discovers_pages(httpx_mock):
     httpx_mock.add_response(
         url="https://example.com/",
         status_code=200,
-        headers={
-            "content-type": "text/html"
-        },
+        headers={"content-type": "text/html"},
         text="""
         <html>
             <head>
@@ -49,9 +47,7 @@ async def test_crawler_discovers_pages(httpx_mock):
     httpx_mock.add_response(
         url="https://example.com/about",
         status_code=200,
-        headers={
-            "content-type": "text/html"
-        },
+        headers={"content-type": "text/html"},
         text="""
         <html>
             <head>
@@ -111,9 +107,7 @@ async def test_crawler_respects_max_pages(
     httpx_mock.add_response(
         url="https://example.com/",
         status_code=200,
-        headers={
-            "content-type": "text/html"
-        },
+        headers={"content-type": "text/html"},
         text="""
         <a href="/one">One</a>
         <a href="/two">Two</a>

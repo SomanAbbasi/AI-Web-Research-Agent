@@ -41,14 +41,10 @@ async def crawl_website(
         )
 
         normalized_request = CrawlRequest(
-            start_url=normalize_url(
-                request.start_url
-            ),
+            start_url=normalize_url(request.start_url),
             max_depth=request.max_depth,
             max_pages=request.max_pages,
             allowed_domain=request.allowed_domain,
         )
 
-        return await crawler.crawl(
-            normalized_request
-        )
+        return await crawler.crawl(normalized_request)

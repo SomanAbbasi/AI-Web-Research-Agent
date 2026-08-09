@@ -12,9 +12,7 @@ async def test_http_client_get(httpx_mock):
     )
 
     async with HTTPClient() as client:
-        response = await client.get(
-            "https://example.com"
-        )
+        response = await client.get("https://example.com")
 
     assert response.status_code == 200
     assert response.text == "<html>Hello</html>"
@@ -30,20 +28,13 @@ async def test_http_client_sends_user_agent(
         text="OK",
     )
 
-    async with HTTPClient(
-        user_agent="TestCrawler/1.0"
-    ) as client:
-        await client.get(
-            "https://example.com"
-        )
+    async with HTTPClient(user_agent="TestCrawler/1.0") as client:
+        await client.get("https://example.com")
 
     request = httpx_mock.get_request()
 
     assert request is not None
-    assert (
-        request.headers["user-agent"]
-        == "TestCrawler/1.0"
-    )
+    assert request.headers["user-agent"] == "TestCrawler/1.0"
 
 
 @pytest.mark.asyncio
@@ -51,6 +42,4 @@ async def test_http_client_requires_context_manager():
     client = HTTPClient()
 
     with pytest.raises(RuntimeError):
-        await client.get(
-            "https://example.com"
-        )
+        await client.get("https://example.com")

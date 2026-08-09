@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter
 
 from ai_web_research_agent.config.settings import get_settings
@@ -8,7 +7,7 @@ router = APIRouter(tags=["Health"])
 
 
 @router.get("/", summary="Application status")
-async def root():
+async def root() -> dict[str, str]:
     settings = get_settings()
 
     return {
@@ -21,7 +20,7 @@ async def root():
     "/health",
     response_model=HealthResponse,
 )
-async def health():
+async def health() -> HealthResponse:
     settings = get_settings()
 
     return HealthResponse(
@@ -31,7 +30,7 @@ async def health():
 
 
 @router.get("/version")
-async def version():
+async def version() -> dict[str, str]:
     settings = get_settings()
 
     return {"version": settings.app_version}

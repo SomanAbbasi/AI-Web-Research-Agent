@@ -1,18 +1,17 @@
-
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    app_name: str
-    app_version: str
-    app_env: str
+    app_name: str = "AI Web Research Agent"
+    app_version: str = "0.1.0"
+    app_env: str = "development"
 
-    host: str
-    port: int
+    host: str = "127.0.0.1"
+    port: int = 8000
 
-    log_level: str
+    log_level: str = "INFO"
 
     model_config = SettingsConfigDict(
         env_file=".env",

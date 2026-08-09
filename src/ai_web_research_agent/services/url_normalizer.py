@@ -15,11 +15,7 @@ def normalize_url(url: str) -> str:
 
     port = parts.port
 
-    if port is None:
-        netloc = hostname
-    elif (scheme == "http" and port == 80) or (
-        scheme == "https" and port == 443
-    ):
+    if port is None or (scheme == "http" and port == 80) or (scheme == "https" and port == 443):
         netloc = hostname
     else:
         netloc = f"{hostname}:{port}"

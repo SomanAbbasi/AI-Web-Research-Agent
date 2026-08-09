@@ -32,7 +32,4 @@ def test_html_parser():
     assert "console.log" not in result.text
 
     assert len(result.links) == 1
-    assert (
-        result.links[0].url
-        == "https://example.com/about"
-    )
+    assert result.links[0].url == "https://example.com/about"

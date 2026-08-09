@@ -22,11 +22,7 @@ class HTMLParser:
             "html.parser",
         )
 
-        title = (
-            soup.title.get_text(strip=True)
-            if soup.title
-            else None
-        )
+        title = soup.title.get_text(strip=True) if soup.title else None
 
         for element in soup(
             [
