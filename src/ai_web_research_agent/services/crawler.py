@@ -109,7 +109,7 @@ class Crawler:
                         CrawlResult(
                             url=url,
                             status=CrawlStatus.FAILED,
-                            error=(f"HTTP {response.status_code}"),
+                            error=f"HTTP {response.status_code}",
                         )
                     )
 

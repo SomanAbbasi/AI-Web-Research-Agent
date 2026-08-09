@@ -8,6 +8,7 @@ from ai_web_research_agent.infrastructure.html_parser import (
 )
 from ai_web_research_agent.infrastructure.http import (
     HTTPClient,
+    RetryPolicy,
 )
 from ai_web_research_agent.infrastructure.robots import (
     RobotsPolicy,
@@ -31,6 +32,9 @@ async def crawl_website(
     async with HTTPClient(
         timeout=settings.request_timeout,
         user_agent=settings.user_agent,
+        retry_policy=RetryPolicy(
+            max_attempts=settings.max_retries,
+        ),
     ) as http_client:
         robots_policy = RobotsPolicy(
             http_client=http_client,
