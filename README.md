@@ -6,7 +6,7 @@ This project is being developed phase by phase.
 
 ## Current Phase
 
-Phase 2 — Intelligent Crawling Engine
+Phase 3 — Browser Automation
 
 ## Features
 
@@ -24,6 +24,8 @@ Phase 2 — Intelligent Crawling Engine
 - Retry handling with exponential backoff
 - HTML parsing and link extraction
 - Same-domain crawling with depth and page limits
+- Transport-agnostic page fetching (HTTP default, Playwright fallback)
+- JavaScript rendering for thin HTTP content
 
 ## Project Layout
 
@@ -79,3 +81,4 @@ uv run mypy src
 ## Documentation
 
 - [Crawling Engine](docs/crawling.md)
+- [Browser Automation](docs/browser-automation.md)
