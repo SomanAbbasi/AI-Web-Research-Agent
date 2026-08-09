@@ -15,6 +15,9 @@ from ai_web_research_agent.infrastructure.robots import (
 from ai_web_research_agent.services.crawler import (
     Crawler,
 )
+from ai_web_research_agent.services.rate_limiter import (
+    RateLimiter,
+)
 from ai_web_research_agent.services.url_normalizer import (
     normalize_url,
 )
@@ -40,6 +43,9 @@ async def crawl_website(
             http_client=http_client,
             robots_policy=robots_policy,
             html_parser=parser,
+            rate_limiter=RateLimiter(
+                delay=settings.crawl_delay,
+            ),
         )
 
         normalized_request = CrawlRequest(

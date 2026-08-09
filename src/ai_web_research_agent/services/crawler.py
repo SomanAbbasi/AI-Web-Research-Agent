@@ -19,6 +19,9 @@ from ai_web_research_agent.infrastructure.robots import (
 from ai_web_research_agent.services.frontier import (
     URLFrontier,
 )
+from ai_web_research_agent.services.rate_limiter import (
+    RateLimiter,
+)
 from ai_web_research_agent.services.url_normalizer import (
     normalize_url,
 )
@@ -32,10 +35,12 @@ class Crawler:
         http_client: HTTPClient,
         robots_policy: RobotsPolicy,
         html_parser: HTMLParser,
+        rate_limiter: RateLimiter | None = None,
     ) -> None:
         self._http_client = http_client
         self._robots_policy = robots_policy
         self._html_parser = html_parser
+        self._rate_limiter = rate_limiter or RateLimiter()
 
     async def crawl(
         self,
@@ -93,6 +98,10 @@ class Crawler:
                 continue
 
             try:
+                host = urlparse(url).netloc
+
+                await self._rate_limiter.wait(host)
+
                 response = await self._http_client.get(url)
 
                 if response.status_code >= 400:
