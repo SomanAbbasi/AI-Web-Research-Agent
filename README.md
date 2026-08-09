@@ -6,7 +6,7 @@ This project is being developed phase by phase.
 
 ## Current Phase
 
-Phase 5 — Data Management & Reporting
+Phase 6 — Autonomous AI Research Agent
 
 ## Features
 
@@ -34,6 +34,10 @@ Phase 5 — Data Management & Reporting
 - Deduplicated storage of pages, sources and records per session
 - Record search, confidence filtering, missing-field filtering and pagination
 - Report export (JSON, CSV, Markdown)
+- Autonomous research agent with planning, source discovery, extraction and
+  validation
+- Missing-information retry rounds across new sources
+- Cross-source conflict resolution and final report synthesis
 
 ## Project Layout
 
@@ -44,7 +48,7 @@ src/ai_web_research_agent/
 ├── core/           # Cross-cutting concerns (logging)
 ├── domain/         # Business models and interfaces
 ├── infrastructure/ # External systems (HTTP, parsing, robots)
-├── models/         # Persistence models (later phases)
+├── models/         # Persistence models (SQLAlchemy)
 ├── schemas/        # Pydantic request/response schemas
 ├── services/       # Application services and orchestration
 └── utils/          # Small reusable utilities
@@ -92,3 +96,4 @@ uv run mypy src
 - [Browser Automation](docs/browser-automation.md)
 - [AI Extraction](docs/extraction.md)
 - [Data Management & Reporting](docs/data-management.md)
+- [Autonomous Research Agent](docs/research-agent.md)

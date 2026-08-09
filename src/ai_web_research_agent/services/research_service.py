@@ -81,11 +81,11 @@ async def save_page(
     )
 
 
-async def save_extraction(
+def to_record_model(
     session_id: str,
     record: DomainRecord,
-) -> bool:
-    model = ExtractedRecord(
+) -> ExtractedRecord:
+    return ExtractedRecord(
         session_id=session_id,
         source_url=record.source_url,
         fields=record.fields,
@@ -94,6 +94,13 @@ async def save_extraction(
         searchable_text=" ".join(record.fields.values()),
         confidence=record.confidence,
     )
+
+
+async def save_extraction(
+    session_id: str,
+    record: DomainRecord,
+) -> bool:
+    model = to_record_model(session_id, record)
 
     return await _repository().add_record(session_id, model)
 

@@ -1,4 +1,5 @@
 from ai_web_research_agent.config.settings import get_settings
+from ai_web_research_agent.domain.crawling import PageContent
 from ai_web_research_agent.domain.llm import LLMProvider
 from ai_web_research_agent.domain.research import (
     ExtractedRecord,
@@ -23,11 +24,8 @@ class ResearchError(Exception):
     """Raised when a page cannot be fetched or parsed for research."""
 
 
-async def extract_from_url(
-    request: ResearchRequest,
-    llm_provider: LLMProvider | None = None,
-) -> ExtractedRecord:
-    """Fetch ``request.source_url`` and extract the requested fields."""
+async def fetch_page(request: ResearchRequest) -> PageContent:
+    """Fetch ``request.source_url`` and parse it into page content."""
     settings = get_settings()
 
     async with HTTPClient(
@@ -52,21 +50,44 @@ async def extract_from_url(
         if "text/html" not in fetched.content_type.lower():
             raise ResearchError("Page is not an HTML document")
 
-        page = HTMLParser().parse(
+        return HTMLParser().parse(
             url=fetched.url,
             status_code=fetched.status_code,
             html=fetched.html,
         )
 
-        extraction_service = ExtractionService(
-            llm_provider=llm_provider or build_llm_provider(settings),
-            max_context=settings.llm_max_context,
-        )
 
-        try:
-            return await extraction_service.extract(
-                request=request,
-                page_text=page.text,
-            )
-        except ExtractionError as exc:
-            raise ResearchError(str(exc)) from exc
+async def extract_page(
+    request: ResearchRequest,
+    content: PageContent,
+    llm_provider: LLMProvider | None = None,
+) -> ExtractedRecord:
+    """Extract the requested fields from already-parsed page content."""
+    settings = get_settings()
+
+    extraction_service = ExtractionService(
+        llm_provider=llm_provider or build_llm_provider(settings),
+        max_context=settings.llm_max_context,
+    )
+
+    try:
+        return await extraction_service.extract(
+            request=request,
+            page_text=content.text,
+        )
+    except ExtractionError as exc:
+        raise ResearchError(str(exc)) from exc
+
+
+async def extract_from_url(
+    request: ResearchRequest,
+    llm_provider: LLMProvider | None = None,
+) -> ExtractedRecord:
+    """Fetch ``request.source_url`` and extract the requested fields."""
+    content = await fetch_page(request)
+
+    return await extract_page(
+        request,
+        content,
+        llm_provider=llm_provider,
+    )
