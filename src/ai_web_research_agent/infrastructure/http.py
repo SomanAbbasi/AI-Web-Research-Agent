@@ -1,19 +1,48 @@
+import asyncio
+from collections.abc import Awaitable, Callable
 from types import TracebackType
 from typing import Self
 
 import httpx
 
 
+class RetryPolicy:
+    """How many attempts a request may make and the delay between them.
+
+    Attempts are retried on transient failures: transport errors (timeouts,
+    connection problems) and 5xx server responses.
+    """
+
+    def __init__(
+        self,
+        max_attempts: int = 3,
+        backoff: float = 0.5,
+    ) -> None:
+        if max_attempts < 1:
+            raise ValueError("max_attempts must be at least 1")
+
+        self.max_attempts = max_attempts
+        self.backoff = backoff
+
+    def delay_for(self, attempt: int) -> float:
+        """Exponential backoff for the given 1-based attempt number."""
+        return self.backoff * float(2 ** (attempt - 1))
+
+
 class HTTPClient:
-    """Reusable asynchronous HTTP client."""
+    """Reusable asynchronous HTTP client with retry support."""
 
     def __init__(
         self,
         timeout: float = 10.0,
         user_agent: str = "AIWebResearchAgent/0.1",
+        retry_policy: RetryPolicy | None = None,
+        sleeper: Callable[[float], Awaitable[None]] = asyncio.sleep,
     ) -> None:
         self._timeout = timeout
         self._user_agent = user_agent
+        self._retry_policy = retry_policy or RetryPolicy()
+        self._sleeper = sleeper
         self._client: httpx.AsyncClient | None = None
 
     async def __aenter__(self) -> Self:
@@ -41,4 +70,24 @@ class HTTPClient:
         if self._client is None:
             raise RuntimeError("HTTPClient must be used as an async context manager")
 
-        return await self._client.get(url)
+        attempt = 1
+
+        while True:
+            try:
+                response = await self._client.get(url)
+
+                if response.status_code >= 500 and attempt < self._retry_policy.max_attempts:
+                    await self._backoff(attempt)
+                    attempt += 1
+                    continue
+
+                return response
+            except httpx.TransportError:
+                if attempt >= self._retry_policy.max_attempts:
+                    raise
+
+                await self._backoff(attempt)
+                attempt += 1
+
+    async def _backoff(self, attempt: int) -> None:
+        await self._sleeper(self._retry_policy.delay_for(attempt))
