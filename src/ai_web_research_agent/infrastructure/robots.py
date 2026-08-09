@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from urllib.parse import urlparse
 
 import httpx
@@ -5,8 +6,22 @@ import httpx
 from ai_web_research_agent.infrastructure.http import HTTPClient
 
 
+@dataclass(frozen=True)
+class RobotsRule:
+    """A single Allow/Disallow rule for a robots.txt group."""
+
+    path: str
+    allow: bool
+
+
 class RobotsPolicy:
-    """Determines whether a URL may be crawled."""
+    """Determines whether a URL may be crawled based on robots.txt.
+
+    Rules are grouped per user-agent. Groups are matched against the
+    crawler's user agent with a specific group taking precedence over a
+    wildcard group. Within a group the most specific (longest) rule wins,
+    with Allow taking precedence on ties.
+    """
 
     def __init__(
         self,
@@ -15,7 +30,7 @@ class RobotsPolicy:
     ) -> None:
         self._http_client = http_client
         self._user_agent = user_agent
-        self._rules: dict[str, list[str]] = {}
+        self._groups: dict[str, dict[str, list[RobotsRule]]] = {}
         self._loaded: set[str] = set()
 
     async def can_fetch(self, url: str) -> bool:
@@ -26,15 +41,22 @@ class RobotsPolicy:
         if origin not in self._loaded:
             await self._load(origin)
 
-        rules = self._rules.get(origin, [])
+        rules = self._select_group(origin)
 
-        return not any(
-            self._matches_rule(
-                parsed.path,
-                rule,
-            )
-            for rule in rules
+        if not rules:
+            return True
+
+        matching = [rule for rule in rules if parsed.path.startswith(rule.path)]
+
+        if not matching:
+            return True
+
+        best = max(
+            matching,
+            key=lambda rule: (len(rule.path), rule.allow),
         )
+
+        return best.allow
 
     async def _load(self, origin: str) -> None:
         robots_url = f"{origin}/robots.txt"
@@ -43,27 +65,43 @@ class RobotsPolicy:
             response = await self._http_client.get(robots_url)
 
             if response.status_code >= 400:
-                self._rules[origin] = []
+                self._groups[origin] = {}
                 self._loaded.add(origin)
                 return
 
-            rules = self._parse(response.text)
-
-            self._rules[origin] = rules
+            self._groups[origin] = self._parse(response.text)
 
         except httpx.HTTPError:
-            # If robots.txt cannot be retrieved,
-            # fail open for this initial crawler version.
-            self._rules[origin] = []
+            # If robots.txt cannot be retrieved, fail open.
+            self._groups[origin] = {}
 
         self._loaded.add(origin)
 
-    def _parse(
-        self,
-        content: str,
-    ) -> list[str]:
-        rules: list[str] = []
-        applies = False
+    def _select_group(self, origin: str) -> list[RobotsRule]:
+        groups = self._groups.get(origin, {})
+
+        user_agent_token = self._user_agent.split("/")[0].lower()
+
+        for user_agent, rules in groups.items():
+            if user_agent == "*":
+                continue
+
+            if user_agent_token.startswith(user_agent):
+                return rules
+
+        return groups.get("*", [])
+
+    def _parse(self, content: str) -> dict[str, list[RobotsRule]]:
+        groups: dict[str, list[RobotsRule]] = {}
+        current_user_agents: list[str] = []
+        current_rules: list[RobotsRule] = []
+
+        def flush() -> None:
+            if not current_rules:
+                return
+
+            for user_agent in current_user_agents:
+                groups.setdefault(user_agent, []).extend(current_rules)
 
         for raw_line in content.splitlines():
             line = raw_line.strip()
@@ -79,17 +117,20 @@ class RobotsPolicy:
             key = key.strip().lower()
             value = value.strip()
 
-            if key == "user-agent":
-                applies = value == "*"
+            if key == "user-agent" and value:
+                if current_user_agents and current_rules:
+                    flush()
+                    current_rules = []
 
-            elif key == "disallow" and applies and value:
-                rules.append(value)
+                current_user_agents.append(value.lower())
+            elif key in {"allow", "disallow"} and current_user_agents and value:
+                current_rules.append(
+                    RobotsRule(
+                        path=value,
+                        allow=(key == "allow"),
+                    )
+                )
 
-        return rules
+        flush()
 
-    @staticmethod
-    def _matches_rule(
-        path: str,
-        rule: str,
-    ) -> bool:
-        return path.startswith(rule)
+        return groups
