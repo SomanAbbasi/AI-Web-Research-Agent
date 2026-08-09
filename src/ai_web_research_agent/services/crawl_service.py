@@ -1,3 +1,4 @@
+from ai_web_research_agent.config.settings import get_settings
 from ai_web_research_agent.domain.crawling import (
     CrawlRequest,
     CrawlResult,
@@ -22,14 +23,15 @@ from ai_web_research_agent.services.url_normalizer import (
 async def crawl_website(
     request: CrawlRequest,
 ) -> list[CrawlResult]:
-    user_agent = "AIWebResearchAgent/0.1"
+    settings = get_settings()
 
     async with HTTPClient(
-        user_agent=user_agent,
+        timeout=settings.request_timeout,
+        user_agent=settings.user_agent,
     ) as http_client:
         robots_policy = RobotsPolicy(
             http_client=http_client,
-            user_agent=user_agent,
+            user_agent=settings.user_agent,
         )
 
         parser = HTMLParser()

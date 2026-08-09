@@ -13,6 +13,11 @@ class Settings(BaseSettings):
 
     log_level: str = "INFO"
 
+    user_agent: str = "AIWebResearchAgent/0.1"
+    request_timeout: float = 10.0
+    crawl_delay: float = 0.5
+    max_retries: int = 3
+
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=False,
