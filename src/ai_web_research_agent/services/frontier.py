@@ -2,6 +2,8 @@ from collections import deque
 
 
 class URLFrontier:
+    """FIFO queue that prevents duplicate URLs."""
+
     def __init__(self) -> None:
         self._queue: deque[tuple[str, int]] = deque()
         self._seen: set[str] = set()
@@ -21,8 +23,8 @@ class URLFrontier:
 
         return self._queue.popleft()
 
-    def __len__(self) -> int:
-        return len(self._queue)
-
     def has_seen(self, url: str) -> bool:
         return url in self._seen
+
+    def __len__(self) -> int:
+        return len(self._queue)

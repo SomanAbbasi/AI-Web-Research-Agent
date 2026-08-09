@@ -2,25 +2,38 @@ from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
 
-from ai_web_research_agent.domain.crawling import PageContent, PageLink
+from ai_web_research_agent.domain.crawling import (
+    PageContent,
+    PageLink,
+)
 
 
 class HTMLParser:
+    """Extract useful information from HTML documents."""
+
     def parse(
         self,
         url: str,
         status_code: int,
         html: str,
     ) -> PageContent:
-        soup = BeautifulSoup(html, "html.parser")
+        soup = BeautifulSoup(
+            html,
+            "html.parser",
+        )
 
-        title = soup.title.get_text(strip=True) if soup.title else None
+        title = (
+            soup.title.get_text(strip=True)
+            if soup.title
+            else None
+        )
 
         for element in soup(
             [
                 "script",
                 "style",
                 "noscript",
+                "template",
             ]
         ):
             element.decompose()
@@ -38,9 +51,12 @@ class HTMLParser:
             if not isinstance(href, str):
                 continue
 
-            absolute_url = urljoin(url, href)
+            absolute_url = urljoin(
+                url,
+                href,
+            )
 
-            text_content = anchor.get_text(
+            link_text = anchor.get_text(
                 " ",
                 strip=True,
             )
@@ -48,7 +64,7 @@ class HTMLParser:
             links.append(
                 PageLink(
                     url=absolute_url,
-                    text=text_content,
+                    text=link_text,
                 )
             )
 

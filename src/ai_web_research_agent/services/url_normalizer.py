@@ -7,6 +7,9 @@ def normalize_url(url: str) -> str:
     scheme = parts.scheme.lower()
     hostname = (parts.hostname or "").lower()
 
+    if scheme not in {"http", "https"}:
+        raise ValueError(f"Unsupported URL scheme: {scheme}")
+
     if not hostname:
         raise ValueError(f"Invalid URL: {url}")
 

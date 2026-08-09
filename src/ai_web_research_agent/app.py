@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI
 
 from ai_web_research_agent.api.router import router
